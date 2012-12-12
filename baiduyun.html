@@ -1,0 +1,109 @@
+ <html>
+ <head>
+ <script src="http://young.baidu.com/static/js/html/jquery.js"></script>
+ <script type="text/javascript">
+    var vcodeStr='';
+	var vcodeIn='';
+	function go() {
+        $.ajax({
+            url: 'http://young.baidu.com/iDraw.php',
+            data: {
+                'a': 'd',
+                'vcode_str': vcodeStr,
+                'vcode_input': vcodeIn,
+                'temp' : +new Date()
+            },
+            cache:false,
+            type:'GET',
+            dataType: 'json',
+            success: function(msg) {
+                if ( parseInt(msg.errno) == -4 || (msg.prizetype && msg.prizetype > 0) ) {
+					getVcode();
+					changeUserScore();
+					showPriceInfo(msg);
+                }
+				else
+				{
+					if (parseInt(msg.errno) == -1 ) {
+						var info = '没有登录~~！';
+					}else if (parseInt(msg.errno) == -3 ) {
+						var info =  '验证码输错了~~！';
+					} else {
+						var info = '出错了，稍候再试！';
+					}
+					getVcode();
+				}
+				lottery.vcodeStr = '';
+                lottery.vcodeIn = '';
+            },
+            error: function() {
+			   alert('出错了，稍候再试！');
+            }
+        });
+    }
+	
+	function showPriceInfo(msg){
+		if(msg.prizetype < 7 )
+		{
+			logout(msg.msg+'填写获奖资料实物奖品将在活动结束之后统一发放');
+		}
+		else if ( msg.prizetype == 7 )
+		{
+			logout(msg.msg+'充值卡密码：'+msg.cardnum);
+		}
+		else if ( msg.prizetype == 8 )
+		{
+			var tmp = '';
+			if( msg.cloudstatus == 1){
+				logout(msg.msg+'请至 <a href=\'http://young.baidu.com/d.php?attr=1201&num='+ msg.cloudnum +'\'> 兑换');
+			}
+			if( msg.cloudstatus == 2){
+				logout(msg.msg+'请至 <a href=\'http://wallet.baidu.com\'> 查看');
+			}
+		}
+		else
+		{
+			logout(msg.msg);
+		}
+	}
+	
+	function getVcode(){
+		$.getJSON('http://young.baidu.com/iDraw.php', {'a':'v', '_temp':+new Date()}, function(msg){
+			if(msg && msg.imgurl){
+				$('#c-vcode_img').attr('src', decodeURIComponent(msg.imgurl));
+				vcodeStr = msg.vcode_str;
+				$('#c-vcode-in').val('');
+			}
+		});
+	}
+	
+    $('#c-go').click(function(e){
+		e.preventDefault();
+        var vcodeIn = $('#c-vcode-in').val();
+        if(vcodeIn && vcodeIn != '请输入验证码'){
+            go();
+        }else{
+			logout('请输入验证码后继续!');
+        }
+    });
+	
+	$('#c-vcode_img').click(function(e){e.preventDefault();getVcode();});
+	
+	function logout(text){
+		$('#log').append('<p>'+text+'</p>');
+	}
+	
+	function getstart(){
+		getVcode();
+		logout('init');
+	}
+	window.onload=getstart();
+</script>
+</head>
+<body>
+<input id='c-vcode-in' type='text' value='请输入验证码' onmousedown='javascript:this.value=''' maxlength='6'>
+<img id='c-vcode_img' width='100px' height='30px' alt='验证码' title='验证码'>
+<input id='c-go' type='button' value='开始'>
+<div id='log'></div>
+</body>
+</html>
